@@ -37,6 +37,17 @@ output application/xml
 			</jms:consumer-type>
 		</jms:listener>
 		<logger level="INFO" doc:name="Logger" doc:id="465156d1-a8a5-4019-abb8-7214805eab62" message="Inicio del flujo para la generación y envío de los reportes de estadísticas"/>
-		<set-variable value="" doc:name="Set Variable" doc:id="ad966077-ef8a-4f8a-b649-3fe56541945c" variableName="iniciar"/>
+		<ee:transform doc:name="Transform Message" doc:id="ae2de904-544f-48b3-8f62-43982bc6c09b" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+  iniciar: payload.iniciar as Boolean
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload.iniciar]" doc:name="Set Variable" doc:id="ad966077-ef8a-4f8a-b649-3fe56541945c" variableName="iniciar"/>
+		<logger level="INFO" doc:name="Logger" doc:id="93cb0556-2642-4b30-87b7-d5a314fe0627" />
 	</flow>
 </mule>
