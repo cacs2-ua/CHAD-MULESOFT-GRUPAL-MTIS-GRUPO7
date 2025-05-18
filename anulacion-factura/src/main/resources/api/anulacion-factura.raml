@@ -1,0 +1,210 @@
+#%RAML 1.0
+types:
+  SolicitudAnulacionFactura:
+    type: object
+    example:
+      strict: false
+      value:
+        numeroFactura: FAC-178965412674769490
+        emailEmpresa: facturacion@empresa.com
+    properties:
+      numeroFactura:
+        description: Identificador único de cada factura
+        type: string
+        required: true
+      emailEmpresa:
+        description: Email de la empresa que emitió la factura
+        type: string
+        required: true
+  SuccessResponse:
+    type: object
+    example:
+      strict: false
+      value:
+        mensaje: Operación realizada con éxito.
+    properties:
+      mensaje?:
+        type: string
+  ErrorResponse:
+    type: object
+    example:
+      strict: false
+      value:
+        error: mensaje_de_error
+    properties:
+      error?:
+        type: string
+  FacturaNoEncontradaError:
+    type: object
+    example:
+      strict: false
+      value:
+        error: Factura no encontrada
+    properties:
+      error?:
+        type: string
+annotationTypes:
+  amf-serverDescription:
+    type: any
+  amf-exclusiveMinimum:
+    type: any
+  amf-binding:
+    type: any
+  amf-pattern:
+    type: any
+  amf-payloads:
+    type: any
+  amf-exclusiveMaximum:
+    type: any
+  amf-consumes:
+    type: any
+  amf-additionalProperties:
+    type: any
+  amf-or:
+    type: any
+  amf-url:
+    type: any
+  amf-externalDocs:
+    type: any
+  amf-flow:
+    type: any
+  amf-oasDeprecated:
+    type: any
+  amf-contact:
+    type: any
+  amf-multipleOf:
+    type: any
+  amf-xor:
+    type: any
+  amf-not:
+    type: any
+  swagger-router-controller:
+    type: any
+  amf-callbacks:
+    type: any
+  amf-produces:
+    type: any
+  amf-format:
+    type: any
+  amf-license:
+    type: any
+  amf-summary:
+    type: any
+  amf-responses:
+    type: any
+  amf-maximum:
+    type: any
+  amf-tags:
+    type: any
+  amf-dependencies:
+    type: any
+  amf-readOnly:
+    type: any
+  amf-tuple:
+    type: any
+  amf-examples:
+    type: any
+  amf-collectionFormat:
+    type: any
+  amf-termsOfService:
+    type: any
+  amf-servers:
+    type: any
+  amf-xone:
+    type: any
+  amf-defaultResponse:
+    type: any
+  amf-baseUriParameters:
+    type: any
+  amf-parameters:
+    type: any
+  amf-minimum:
+    type: any
+  amf-recursive:
+    type: any
+  amf-and:
+    type: any
+title: OpenAPI de Facturación Electrónica del Grupo 7 MTIS 2024-2025
+baseUri: http://localhost:14104/api
+description: |
+  Contrato OpenAPI para el servicio inciador de composición "Subsanación de factura".
+version: 1.0.0
+/anulacion-facturas/iniciar:
+  post:
+    displayName: anulacionFactura
+    (amf-summary): Iniciar una tarea de anulación de una factura.
+    (amf-tags):
+      - Anulacion de factura
+    headers:
+      WSKey:
+        description: Clave de autenticación WSKey
+        required: true
+        type: string
+    body:
+      application/json: SolicitudAnulacionFactura
+    responses:
+      "200":
+        description: Anulación de la factura realizada correctamente.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: SuccessResponse
+      "400":
+        description: Bad Request.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "401":
+        description: Acceso no autorizado.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "403":
+        description: No se tienen los suficientes permisos.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "404":
+        description: Factura no encontrada.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: FacturaNoEncontradaError
+      "405":
+        description: Método no permitido.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "500":
+        description: Error Interno del Servidor.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "503":
+        description: Servicio No Disponible.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+    (swagger-router-controller): anulacion-factura

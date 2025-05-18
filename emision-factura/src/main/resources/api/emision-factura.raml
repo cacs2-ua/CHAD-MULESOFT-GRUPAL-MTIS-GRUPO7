@@ -1,0 +1,265 @@
+#%RAML 1.0
+types:
+  SolicitudEmisionFactura:
+    type: object
+    example:
+      strict: false
+      value:
+        nombreEmpresa: NTT Data
+        emailEmpresa: ntt@data.es
+        identificadorFiscalEmpresa: A54376132
+        identificadorEmpleador: 13/999888777
+        ibanEmpresa: ES7120801348517501148317
+        paisEmpresa: España
+        provinciaEmpresa: Alicante (Campo Opcional)
+        localidadEmpresa: San Vicente del Raspeig (Cmpo Opcional)
+        direccionCompletaFacturacion: Calle Santo Tomás, Nº4, Bloque C2, 5ºIz
+        codigoPostal: "03690"
+        numeroFactura: FAC-178965412674769490
+        baseImponible: 1250.75
+        iva: 0.21
+        moneda: EURO
+        fechaDesdeFacturacion: 2025-04-01
+        fechaHastaFacturacion: 2025-04-01
+    properties:
+      nombreEmpresa:
+        description: Nombre de la empresa.
+        type: string
+        required: true
+      emailEmpresa:
+        description: Email de la empresa.
+        type: string
+        required: true
+      identificadorFiscalEmpresa:
+        description: Identificador Fiscal de la empresa.
+        type: string
+        required: true
+      identificadorEmpleador:
+        description: Identificador del empleador.
+        type: string
+        required: true
+      ibanEmpresa:
+        description: IBAN de la empresa.
+        type: string
+        required: true
+      paisEmpresa:
+        description: País de la empresa.
+        type: string
+        required: true
+      provinciaEmpresa:
+        description: Provincia de la empresa.
+        type: string
+        required: true
+      localidadEmpresa:
+        description: Localidad de la empresa.
+        type: string
+        required: true
+      direccionCompletaFacturacion:
+        description: Dirección completa de la facturación.
+        type: string
+        required: true
+      codigoPostal:
+        description: Código Postal de la empresa.
+        type: string
+        required: true
+      numeroFactura:
+        description: Número identificativo de la factura.
+        type: string
+        required: true
+      baseImponible:
+        description: Base imponible de la factura.
+        type: number
+        format: double
+        required: true
+      iva:
+        description: IVA de la factura.
+        type: number
+        format: double
+        required: true
+      moneda:
+        description: Moneda que se utiliza en la factura.
+        type: string
+        required: true
+      fechaDesdeFacturacion:
+        description: Fecha en la que comienza el periodo de facturación.
+        type: date-only
+        required: true
+      fechaHastaFacturacion:
+        description: Fecha en la que finaliza el periodo de facturación.
+        type: date-only
+        required: true
+  SuccessResponse:
+    type: object
+    example:
+      strict: false
+      value:
+        mensaje: Emisión de factura realizada con éxito.
+    properties:
+      mensaje?:
+        type: string
+  ErrorResponse:
+    type: object
+    example:
+      strict: false
+      value:
+        error: mensaje_de_error
+    properties:
+      error?:
+        type: string
+annotationTypes:
+  amf-serverDescription:
+    type: any
+  amf-exclusiveMinimum:
+    type: any
+  amf-binding:
+    type: any
+  amf-pattern:
+    type: any
+  amf-payloads:
+    type: any
+  amf-exclusiveMaximum:
+    type: any
+  amf-consumes:
+    type: any
+  amf-additionalProperties:
+    type: any
+  amf-or:
+    type: any
+  amf-url:
+    type: any
+  amf-externalDocs:
+    type: any
+  amf-flow:
+    type: any
+  amf-oasDeprecated:
+    type: any
+  amf-contact:
+    type: any
+  amf-multipleOf:
+    type: any
+  amf-xor:
+    type: any
+  amf-not:
+    type: any
+  swagger-router-controller:
+    type: any
+  amf-callbacks:
+    type: any
+  amf-produces:
+    type: any
+  amf-format:
+    type: any
+  amf-license:
+    type: any
+  amf-summary:
+    type: any
+  amf-responses:
+    type: any
+  amf-maximum:
+    type: any
+  amf-tags:
+    type: any
+  amf-dependencies:
+    type: any
+  amf-readOnly:
+    type: any
+  amf-tuple:
+    type: any
+  amf-examples:
+    type: any
+  amf-collectionFormat:
+    type: any
+  amf-termsOfService:
+    type: any
+  amf-servers:
+    type: any
+  amf-xone:
+    type: any
+  amf-defaultResponse:
+    type: any
+  amf-baseUriParameters:
+    type: any
+  amf-parameters:
+    type: any
+  amf-minimum:
+    type: any
+  amf-recursive:
+    type: any
+  amf-and:
+    type: any
+title: OpenAPI de Facturación Electrónica del Grupo 7 MTIS 2024-2025
+baseUri: http://localhost:14101/api
+description: |
+  Contrato OpenAPI para el servicio inciador de composición "Emisión de factura".
+version: 1.0.0
+/emision-facturas/iniciar:
+  post:
+    displayName: emisionFactura
+    (amf-summary): Iniciar una tarea de emisión de factura
+    (amf-tags):
+      - Emision de factura
+    headers:
+      WSKey:
+        description: Clave de autenticación WSKey
+        required: true
+        type: string
+    body:
+      application/json: SolicitudEmisionFactura
+    responses:
+      "200":
+        description: Emisión de la factura realizada correctamente.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: SuccessResponse
+      "400":
+        description: Bad Request.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "401":
+        description: Acceso no autorizado.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "403":
+        description: No se tienen los suficientes permisos.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "405":
+        description: Método no permitido.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "500":
+        description: Error Interno del Servidor.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "503":
+        description: Servicio No Disponible.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+    (swagger-router-controller): emision-factura

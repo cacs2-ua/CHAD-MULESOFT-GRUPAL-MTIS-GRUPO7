@@ -1,0 +1,292 @@
+#%RAML 1.0
+types:
+  FacturaConsulta:
+    type: object
+    example:
+      strict: false
+      value:
+        id: 23
+        uuid: 4af7fcd9-2e68-11f0-9444-0a002700000a
+        numeroFactura: FAC-178965412674769490
+        empresaId: 34
+        facturaRectificadaId: 21
+        baseImponible: 1250.75
+        iva: 0.21
+        moneda: EURO
+        tipo: ORDINARIA
+        estado: VALIDA
+        esSubsanable: true
+        haSidoSubsanada: true
+        fechaRectificacion: 2025-05-10T14:30:45
+        fechaEmision: 2025-05-01T11:45:56
+        fechaDesdeFacturacion: 2025-04-01
+        fechaHastaFacturacion: 2025-05-01
+    properties:
+      id:
+        description: Id de la factura.
+        type: number
+        required: true
+      uuid:
+        description: Uuid de la factura.
+        type: string
+        required: true
+      numeroFactura:
+        description: Número identificativo y único de la factura.
+        type: string
+        required: true
+      empresaId:
+        description: Id de la empresa.
+        type: number
+        required: true
+      facturaRectificadaId:
+        type: facturaRectificadaId | nil
+        required: true
+      baseImponible:
+        description: Base imponible de la factura.
+        type: number
+        format: double
+        required: true
+      iva:
+        description: IVA de la factura.
+        type: number
+        format: double
+        required: true
+      moneda:
+        description: Moneda de la factura.
+        type: string
+        required: true
+      tipo:
+        description: Tipo de la factura ('ORDINARIA', 'RECTIFICATIVA').
+        enum:
+          - ORDINARIA
+          - RECTIFICATIVA
+        type: string
+        required: true
+      estado:
+        description: Estado de la factura ('VALIDA', 'RECTIFICADA', 'INVALIDA', 'ANULADA').
+        enum:
+          - VALIDA
+          - RECTIFICADA
+          - INVALIDA
+          - ANULADA
+        type: string
+        required: true
+      esSubsanable:
+        description: Flag que indica si una factura es subsanable.
+        type: boolean
+        required: true
+      haSidoSubsanada:
+        description: Flag que indica si una factura ha sido subsanada.
+        type: boolean
+        required: true
+      fechaRectificacion:
+        type: fechaRectificacion | nil
+        required: true
+      fechaEmision:
+        description: Fecha de emisión de la factura.
+        type: datetime
+        required: true
+      fechaDesdeFacturacion:
+        description: Fecha de que se corresponde con el inicio del periodo de facturación.
+        type: date-only
+        required: true
+      fechaHastaFacturacion:
+        description: Fecha de que se corresponde con el final del periodo de facturación.
+        type: date-only
+        required: true
+  facturaRectificadaId:
+    description: Id de la factura rectificada.
+    type: number
+  ErrorResponse:
+    type: object
+    example:
+      strict: false
+      value:
+        error: mensaje_de_error
+    properties:
+      error?:
+        type: string
+  SolicitudConsultaFactura:
+    type: object
+    example:
+      strict: false
+      value:
+        numeroFactura: FAC-178965412674769490
+        emailEmpresa: facturacion@empresa.com
+    properties:
+      numeroFactura:
+        description: Identificador único de cada factura
+        type: string
+        required: true
+      emailEmpresa:
+        description: Email de la empresa que emitió la factura
+        type: string
+        required: true
+  fechaRectificacion:
+    description: Fecha de rectificación de la factura.
+    type: datetime
+annotationTypes:
+  amf-serverDescription:
+    type: any
+  amf-exclusiveMinimum:
+    type: any
+  amf-binding:
+    type: any
+  amf-pattern:
+    type: any
+  amf-payloads:
+    type: any
+  amf-exclusiveMaximum:
+    type: any
+  amf-consumes:
+    type: any
+  amf-additionalProperties:
+    type: any
+  amf-or:
+    type: any
+  amf-url:
+    type: any
+  amf-externalDocs:
+    type: any
+  amf-flow:
+    type: any
+  amf-oasDeprecated:
+    type: any
+  amf-contact:
+    type: any
+  amf-multipleOf:
+    type: any
+  amf-xor:
+    type: any
+  amf-not:
+    type: any
+  swagger-router-controller:
+    type: any
+  amf-callbacks:
+    type: any
+  amf-produces:
+    type: any
+  amf-format:
+    type: any
+  amf-license:
+    type: any
+  amf-summary:
+    type: any
+  amf-responses:
+    type: any
+  amf-maximum:
+    type: any
+  amf-tags:
+    type: any
+  amf-dependencies:
+    type: any
+  amf-readOnly:
+    type: any
+  amf-tuple:
+    type: any
+  amf-examples:
+    type: any
+  amf-collectionFormat:
+    type: any
+  amf-termsOfService:
+    type: any
+  amf-servers:
+    type: any
+  amf-xone:
+    type: any
+  amf-defaultResponse:
+    type: any
+  amf-baseUriParameters:
+    type: any
+  amf-parameters:
+    type: any
+  amf-minimum:
+    type: any
+  amf-recursive:
+    type: any
+  amf-and:
+    type: any
+title: OpenAPI de Facturación Electrónica del Grupo 7 MTIS 2024-2025
+baseUri: http://localhost:14103/api
+description: |
+  Contrato OpenApi para el servicio inciador de composición "Consulta de factura".
+version: 1.0.0
+/consulta-facturas/iniciar:
+  post:
+    displayName: consultaFactura
+    (amf-summary): Iniciar una tarea de consulta de factura
+    (amf-tags):
+      - Consulta de factura
+    headers:
+      WSKey:
+        description: Clave de autenticación WSKey
+        required: true
+        type: string
+    body:
+      application/json: SolicitudConsultaFactura
+    responses:
+      "200":
+        description: Consulta de la factura realizada correctamente.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: FacturaConsulta
+      "400":
+        description: Bad Request.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "401":
+        description: Acceso no autorizado.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "403":
+        description: No se tienen los suficientes permisos.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "404":
+        description: Factura no encontrada.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "405":
+        description: Método no permitido.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "500":
+        description: Error Interno del Servidor.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+      "503":
+        description: Servicio No Disponible.
+        headers:
+          salida?:
+            description: Información detallada de la ejecución del método, incluyendo salidas\  correctas y errores.
+            type: string
+        body:
+          application/json: ErrorResponse
+    (swagger-router-controller): consulta-factura
