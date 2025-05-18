@@ -1,1 +1,42 @@
-a
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="fcc27460-ccdc-45e8-8383-a64a28f9c965" >
+		<jms:active-mq-connection username="mtis" password="mtis" >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="solicitarGeneracionReportesEstadisticasFlow" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
+		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
+			<scheduling-strategy >
+				<fixed-frequency frequency="3000" startDelay="100" />
+			</scheduling-strategy>
+		</scheduler>
+		<logger level="INFO" doc:name="Logger" doc:id="a918ce84-c1e3-4694-9d0c-3527b6da3e90" message="Se solicita la generación de los reportes de estadísticas"/>
+		<ee:transform doc:name="Transform Message" doc:id="01f5b52c-5a16-4e77-ab1a-b7819bcb86cf" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+{
+  iniciar: true
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="Publish" doc:id="686b41ac-014c-4e38-9592-7afeb69de2d2" config-ref="JMS_Config" destination="generador_reportes_estadisticas" destinationType="TOPIC" />
+	</flow>
+	<flow name="generarReportesEstadisticasFlow" doc:id="3e4bfd78-32b2-49fb-b2c0-c7da57071480" >
+		<jms:listener doc:name="On New Message" doc:id="e9fd7342-111b-48c8-9413-b82739603f88" config-ref="JMS_Config" destination="generador_reportes_estadisticas" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="465156d1-a8a5-4019-abb8-7214805eab62" message="Inicio del flujo para la generación y envío de los reportes de estadísticas"/>
+		<set-variable value="" doc:name="Set Variable" doc:id="ad966077-ef8a-4f8a-b649-3fe56541945c" variableName="iniciar"/>
+	</flow>
+</mule>
