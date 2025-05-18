@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
-	xmlns="http://www.mulesoft.org/schema/mule/core"
-	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
 	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="fcc27460-ccdc-45e8-8383-a64a28f9c965" >
 		<jms:active-mq-connection username="mtis" password="mtis" >
 			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
 		</jms:active-mq-connection>
 	</jms:config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="ce2c9486-dba8-4eed-8239-9933125b5317" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Empresa?wsdl" service="Empresa" port="EmpresaSOAP" address="http://localhost:8080/reporteEstadisticas/services/Empresa/" />
+	</wsc:config>
 	<flow name="solicitarGeneracionReportesEstadisticasFlow" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
 			<scheduling-strategy >
-				<fixed-frequency frequency="3000" startDelay="100" />
+				<fixed-frequency frequency="8000" startDelay="100" />
 			</scheduling-strategy>
 		</scheduler>
 		<logger level="INFO" doc:name="Logger" doc:id="a918ce84-c1e3-4694-9d0c-3527b6da3e90" message="Se solicita la generación de los reportes de estadísticas"/>
@@ -47,7 +51,30 @@ output application/java
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<set-variable value="#[payload.iniciar]" doc:name="Set Variable" doc:id="ad966077-ef8a-4f8a-b649-3fe56541945c" variableName="iniciar"/>
-		<logger level="INFO" doc:name="Logger" doc:id="93cb0556-2642-4b30-87b7-d5a314fe0627" />
+		<set-variable value="#[payload.iniciar]" doc:name="Set Iniciar Variable" doc:id="ad966077-ef8a-4f8a-b649-3fe56541945c" variableName="iniciar"/>
+		<logger level="INFO" doc:name="Logger" doc:id="93cb0556-2642-4b30-87b7-d5a314fe0627" message="Si iniciar es true, entonces iniciamos el proceso de generación y envío de los reportes de estadísticas"/>
+		<choice doc:name="Choice" doc:id="0e77918f-362b-4702-8514-3c7f7a2f5eb4" >
+			<when expression="#[vars.iniciar == true]">
+				<logger level="INFO" doc:name="Logger" doc:id="acd3c937-79c0-43c8-941b-38cb35302473" message="Iniciar es true"/>
+				<logger level="INFO" doc:name="Logger" doc:id="575e9ba0-c77c-462c-9648-1d8173a35583" message="Transformamos el payload para consumir a la operacion SOAP 'consultarTodasEmpresas'"/>
+				<ee:transform doc:name="Transform Message" doc:id="4a1cc23e-a75a-450d-a224-ad6e99cb5c2c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns emp http://www.example.org/Empresa/
+---
+emp#consultarTodasEmpresas: {
+  WSKey: "SOAP_KEY_GRUPO7_FACTURACION_ELECTRONICA"
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume operation="consultarTodasEmpresas" doc:name="Consume" doc:id="ccba6f6e-985a-491f-bc8f-db894034625d" config-ref="Web_Service_Consumer_Config"/>
+				<logger level="INFO" doc:name="Logger" doc:id="a4b0f709-d540-4cbc-bb88-6de1a0c5003a" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="cfcc7699-b256-459e-9bec-6eec329cde28" message="Iniciar es false"/>
+			</otherwise>
+		</choice>
 	</flow>
 </mule>
