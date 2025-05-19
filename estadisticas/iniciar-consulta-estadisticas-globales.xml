@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<mule xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
     <http:listener-config name="api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="14105"/>
     </http:listener-config>
     <apikit-soap:config httpStatusVarName="httpStatus" name="soapkit-config" port="IniciarConsultaEstadisticasGlobalesSOAP" service="IniciarConsultaEstadisticasGlobales" wsdlLocation="IniciarConsultaEstadisticasGlobales.wsdl"/>
-    <flow name="api-main">
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="e66f4355-5315-4644-98ac-8df820b1966d" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="facturacion" />
+	</db:config>
+	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="/IniciarConsultaEstadisticasGlobales/IniciarConsultaEstadisticasGlobalesSOAP">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
                 <http:body>#[payload]</http:body>
@@ -43,5 +47,20 @@ ns ns0 http://www.example.org/IniciarConsultaEstadisticasGlobales/
 			</ee:message>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="d645e86a-20af-4423-8026-eb293ec1a838" />
+		<set-variable value="#[payload.WSKey]" doc:name="Set WSKey" doc:id="97e8fc60-81d5-4bcb-be1a-187ffd9bd9d0" variableName="WSKey" />
+		<db:select doc:name="Select RealWSKey" doc:id="4ae416d0-a626-42c0-b742-bbe0c96b24ed" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM parametros;]]></db:sql>
+		</db:select>
+		<set-variable value="#[payload[0].valor]" doc:name="Set RealWSKey" doc:id="dc3713d1-c824-4dcb-95f2-9940cad0fdf3" variableName="RealWSKey" />
+		<logger level="INFO" doc:name="Logger1" doc:id="ded01318-39e1-4646-b6af-c0680c33b51d" message="Comparamos la WSKey con la original" />
+		<choice doc:name="Choice" doc:id="5652b3f9-c019-4560-bd55-fdd5b3d458bd" >
+			<when expression="#[vars.WSKey != vars.RealWSKey]" >
+				<raise-error doc:name="Raise error" doc:id="f64cc320-6e98-4f6f-a616-4e6b3ad5d624" type="ACCESS:UNAUTHORIZED" description="ERROR: Operacion no autorizada." />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="84b53ef8-bfbf-4504-a0cb-206720f8ea5a" message="Acceso autorizado para realizar la operación" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="f2d96ef4-1416-48a7-b05c-b98b2d5adb9e" />
     </flow>
 </mule>
