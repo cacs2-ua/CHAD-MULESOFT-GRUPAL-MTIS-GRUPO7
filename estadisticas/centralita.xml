@@ -37,6 +37,13 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 	<wsc:config name="Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="368e659f-ba04-4116-9603-55d2923acdad" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
 	</wsc:config>
+	<wsc:config name="Web_Service_Consumer_Config2" doc:name="Web Service Consumer Config" doc:id="6506cb9b-f896-468e-81b8-47cb1e861d65" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Notificacion?wsdl" service="Notificacion" port="NotificacionSOAP" address="http://localhost:8080/reporteEstadisticas/services/Notificacion/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="120000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
+	</wsc:config>
 	<flow name="solicitanteGeneracionReportesEstadisticas" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
 			<scheduling-strategy >
@@ -390,5 +397,28 @@ var totalValid = (d.numeroTotalFacturasValidas default 0) + (d.numeroTotalFactur
 		<logger level="INFO" doc:name="Logger" doc:id="9f96ba41-b487-4c1b-a9e9-7d84e0188332" />
 		<set-variable value="#[payload]" doc:name="Set emailText" doc:id="fe5d0a5c-1cfd-4db6-98bc-352a8528abd0" variableName="text"/>
 		<logger level="INFO" doc:name="Logger" doc:id="b0b2d774-c19a-4cfc-bad1-b25b086f72ab" />
+		<db:select doc:name="Select" doc:id="dd2e8631-c6e4-41ca-a71b-7b16a7e6a8b4" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT email FROM empresas WHERE id=1;]]></db:sql>
+		</db:select>
+		<set-variable value="#[payload[0].email]" doc:name="Set emailEmpresaPrincipal" doc:id="bfa811da-bccb-4441-af7a-7d8332e14179" variableName="emailEmpresaPrincipal" />
+		<ee:transform doc:name="Transform Message1" doc:id="15fcc673-2662-4343-8fa7-69807865caf6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns not http://www.example.org/Notificacion/
+---
+not#Enviar: {
+	datosEntrada: {
+		from: vars.emailEmpresaPrincipal,
+		to: vars.datosReporte.emailEmpresa,
+		subject: "Statistics report",
+		text: vars.text
+	},
+	WSKey: vars.WSKey
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="Enviar" doc:name="Consume" doc:id="2b74967b-7ccb-4fa1-a873-fc5e572555f8" config-ref="Web_Service_Consumer_Config2"/>
+		<logger level="INFO" doc:name="Logger" doc:id="cc6e4fae-4382-4a64-805e-c6ef3f84d14e" />
 	</flow>
 </mule>
