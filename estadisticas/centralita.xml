@@ -27,7 +27,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	<wsc:config name="prueba" doc:name="Web Service Consumer Config" doc:id="10334601-640e-400d-8c42-c583f890b3cf" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
 	</wsc:config>
-	<flow name="solicitarGeneracionReportesEstadisticasFlow" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
+	<flow name="solicitanteGeneracionReportesEstadisticas" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
 			<scheduling-strategy >
 				<fixed-frequency frequency="8000" startDelay="100" />
@@ -48,10 +48,10 @@ solicitud: {
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<jms:publish doc:name="Publish" doc:id="686b41ac-014c-4e38-9592-7afeb69de2d2" config-ref="JMS_Config" destination="generador_reportes_estadisticas" destinationType="TOPIC" />
+		<jms:publish doc:name="Publish" doc:id="686b41ac-014c-4e38-9592-7afeb69de2d2" config-ref="JMS_Config" destination="calculador_estadisticas" destinationType="TOPIC" />
 	</flow>
-	<flow name="generarReportesEstadisticasFlow" doc:id="3e4bfd78-32b2-49fb-b2c0-c7da57071480">
-		<jms:listener doc:name="On New Message" doc:id="e9fd7342-111b-48c8-9413-b82739603f88" config-ref="JMS_Config" destination="generador_reportes_estadisticas" numberOfConsumers="1">
+	<flow name="calculadorEstadisticas" doc:id="3e4bfd78-32b2-49fb-b2c0-c7da57071480">
+		<jms:listener doc:name="On New Message" doc:id="e9fd7342-111b-48c8-9413-b82739603f88" config-ref="JMS_Config" destination="calculador_estadisticas" numberOfConsumers="1">
 			<jms:consumer-type>
 				<jms:topic-consumer />
 			</jms:consumer-type>
@@ -158,6 +158,12 @@ rep#calcularDatosReporte: {
 							</ee:transform>
 							<wsc:consume doc:name="Consume" doc:id="fe3887be-f179-4d5b-91f1-f31ffa19c684" config-ref="prueba" operation="calcularDatosReporte"/>
 							<logger level="INFO" doc:name="Logger" doc:id="42be12ac-774c-46b0-b3bb-4a5e7ee169db" />
+							<logger level="INFO" doc:name="Logger" doc:id="1b1e7009-03f7-47fa-a9c9-3b7935045c14" />
+							<jms:publish doc:name="Publish" doc:id="fff7e851-14d7-44ea-9e89-115d89ce191b" config-ref="JMS_Config" destination="generador_reportes_estadisticas" destinationType="TOPIC" >
+								<jms:message >
+									<jms:body ><![CDATA[#[payload.body]]]></jms:body>
+								</jms:message>
+							</jms:publish>
 						</when>
 						<otherwise >
 							<logger level="INFO" doc:name="Logger" doc:id="8afebc03-454e-44ae-a1ab-6b7e802a475e" message="Se ignora la empresa con id = 1 ya que dicha empresa es la empresa principal"/>
@@ -169,5 +175,13 @@ rep#calcularDatosReporte: {
 				<logger level="INFO" doc:name="Logger" doc:id="cfcc7699-b256-459e-9bec-6eec329cde28" message="Iniciar es false" />
 			</otherwise>
 		</choice>
+	</flow>
+	<flow name="generadorReporteEstadisticas" doc:id="ec4f4662-6777-4ab4-b284-a443349c9718" >
+		<jms:listener doc:name="On New Message" doc:id="65669fde-f4cb-4c03-8b3b-4d0c0ec569f1" config-ref="JMS_Config" destination="generador_reportes_estadisticas" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="2375a1bc-986b-4460-b45f-583a31fb42cf" />
 	</flow>
 </mule>
