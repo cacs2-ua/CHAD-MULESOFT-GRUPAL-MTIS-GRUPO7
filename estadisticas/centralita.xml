@@ -348,6 +348,47 @@ solicitud: {
 				<jms:topic-consumer />
 			</jms:consumer-type>
 		</jms:listener>
-		<logger level="INFO" doc:name="Logger" doc:id="8cc05825-bfcb-4042-8e64-bb2b6af493d9" />
+		<logger level="INFO" doc:name="Logger" doc:id="8cc05825-bfcb-4042-8e64-bb2b6af493d9" message="Comienzo del proceso de notificación de los reportes de estadísticas a las empresas"/>
+		<ee:transform doc:name="Transform Message" doc:id="952aff42-05ee-4a09-af84-f8af26de8fb9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+  datosReporte: payload.solicitud.datosReporte
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="01e4f145-f704-4b3b-b948-a5a8cc62bff7" message="Almacenamos los datos del reporte en una variable local" />
+		<set-variable value="#[payload.datosReporte]" doc:name="Set datosReporte" doc:id="c621723c-00c1-482f-923c-a0b055a3be03" variableName="datosReporte" />
+		<logger level="INFO" doc:name="Logger" doc:id="5ec4243b-3185-48b5-82b9-6834621ffb0a" message="Recuperamos la WSKey del almacén global y la almacenamos en una variable local" />
+		<os:retrieve doc:name="Retrieve WSKey" doc:id="d1d0e011-871c-4cc6-a967-dc1f3786b31b" key="#['WSKey']" objectStore="Object_store" />
+		<set-variable value="#[payload]" doc:name="Set WSKey" doc:id="9c803f47-0691-4e3d-bed2-0b5f53b282b0" variableName="WSKey" />
+		<logger level="INFO" doc:name="Logger1" doc:id="8ddc4193-6bd1-4cee-94b9-865d03f824e7" message="Transformamos el payload par formatear el cuerpo del email con todos los datos de las estadisticas" />
+		<ee:transform doc:name="Transform Message" doc:id="c48cd975-ead4-47ad-b0b2-471003a32f8f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output text/plain
+var d = vars.datosReporte
+var totalValid = (d.numeroTotalFacturasValidas default 0) + (d.numeroTotalFacturasSubsanadas default 0)
+---
+"- STATISTICS REPORT" ++ "\n" ++
+"- Company email: " ++ (d.emailEmpresa default "") ++ "\n" ++
+"- Start date: " ++ ((d.fechaInicio as DateTime) as String {format: "MMM d, yyyy - HH:mm"}) ++ "\n" ++
+"- End date: " ++ ((d.fechaFin    as DateTime) as String {format: "MMM d, yyyy - HH:mm"}) ++ "\n" ++
+"- Total number of issued invoices: " ++ (d.numeroTotalFacturasEmitidas default 0) ++ "\n" ++
+"- Total sum of all amounts (including VAT): " ++ (d.sumaTotalImportes default 0.0) ++ "\n" ++
+"- Total number of valid invoices (corrected or not corrected): " ++ totalValid ++ "\n" ++
+"- Total number of valid and not corrected invoices: " ++ (d.numeroTotalFacturasValidas   default 0) ++ "\n" ++
+"- Total number of valid and corrected invoices: " ++ (d.numeroTotalFacturasSubsanadas default 0) ++ "\n" ++
+"- Total number of canceled invoices: " ++ (d.numeroTotalFacturasAnuladas   default 0) ++ "\n" ++
+"- Total number of invalid invoices: " ++ (d.numeroTotalFacturasInvalidas  default 0)
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9f96ba41-b487-4c1b-a9e9-7d84e0188332" />
+		<set-variable value="#[payload]" doc:name="Set emailText" doc:id="fe5d0a5c-1cfd-4db6-98bc-352a8528abd0" variableName="text"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b0b2d774-c19a-4cfc-bad1-b25b086f72ab" />
 	</flow>
 </mule>
