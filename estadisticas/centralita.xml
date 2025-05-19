@@ -34,6 +34,9 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
 		</wsc:connection>
 	</wsc:config>
+	<wsc:config name="Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="368e659f-ba04-4116-9603-55d2923acdad" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
+	</wsc:config>
 	<flow name="solicitanteGeneracionReportesEstadisticas" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
 			<scheduling-strategy >
@@ -248,13 +251,28 @@ rep#guardarReporteEnBD: {
 		<logger level="INFO" doc:name="Logger" doc:id="d0d15341-052f-4d03-8f9c-7c5a5dae4f4f" message="Se almacena el reporte en la base de datos"/>
 		<wsc:consume operation="guardarReporteEnBD" doc:name="Guardar reporte en BD" doc:id="95ed229f-5fcd-4474-bbdb-2dc7e6330469" config-ref="Reporte_SOAP_Service"/>
 		<logger level="INFO" doc:name="Logger" doc:id="481d2d38-faa9-4220-a2ab-fbbfdbf273e9" message="#['Reporte de estadísticas creado y almacenado correctamente para la empresa con email: ' ++ (vars.datosReporte.emailEmpresa)]"/>
+		<ee:transform doc:name="Transform Message" doc:id="715868fb-6a08-4e19-a460-c3bf04dc6743" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+ns rep http://www.example.org/Reporte/
+---
+{
+  reporteId: (payload.body.rep#guardarReporteEnBDResponse.reporteId) as Number
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="dc10794f-57cd-48e9-a606-4168eac86f08" message="Almacenamos el id del reporte insertado en una variable"/>
+		<set-variable value="#[payload.reporteId]" doc:name="Set reporteInsertadoId" doc:id="7e17b154-1bb7-43d1-9d57-16f63158a9ab" variableName="reporteInsertadoId"/>
 		<ee:transform doc:name="Transform Message" doc:id="1662ba5e-7c9d-4fc2-ac30-6080ced0cf68" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/xml
 ---
 solicitud: {
-  datosReporte: vars.datosReporte
+  datosReporte: vars.datosReporte,
+  reporteInsertadoId: vars.reporteInsertadoId
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
@@ -274,13 +292,43 @@ solicitud: {
 output application/java
 ---
 {
-  datosReporte: payload.solicitud.datosReporte
+  datosReporte: payload.solicitud.datosReporte,
+  reporteInsertadoId: payload.solicitud.reporteInsertadoId
 }
 ]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="9392b597-bfdc-477c-bf35-cc823331a872" />
+		<logger level="INFO" doc:name="Logger" doc:id="9392b597-bfdc-477c-bf35-cc823331a872" message="Almacenamos los datos del reporte en una variable local"/>
 		<set-variable value="#[payload.datosReporte]" doc:name="Set datosReporte" doc:id="935d88bf-df9f-4a00-a000-53194ca6ae6c" variableName="datosReporte"/>
-		<logger level="INFO" doc:name="Logger" doc:id="4449a505-a1da-4889-a1cc-770d56aeca7d" />
+		<set-variable value="#[payload.reporteInsertadoId as Number]" doc:name="Set reporteInsertadoId" doc:id="2e67e964-af91-4e52-8021-43747eba7542" variableName="reporteInsertadoId"/>
+		<logger level="INFO" doc:name="Logger" doc:id="4449a505-a1da-4889-a1cc-770d56aeca7d" message="Recuperamos la WSKey del almacén global y la almacenamos en una variable local"/>
+		<os:retrieve doc:name="Retrieve WSKey" doc:id="1b34f632-c821-46fb-885c-80c7512ba473" key="#['WSKey']" objectStore="Object_store" />
+		<set-variable value="#[payload]" doc:name="Set WSKey" doc:id="bd29c169-f794-4a4d-92c4-ff74861b1f46" variableName="WSKey" />
+		<logger level="INFO" doc:name="Logger" doc:id="08357ba4-f43a-4cc7-a8ba-3826d818c623" message="Transformamos el payload para consumir la operación SOAP 'generarPDF' del servicio 'Documento'" />
+		<ee:transform doc:name="Transform Message" doc:id="94a0e2b1-e1b3-41fb-a840-8ab460f6103c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns doc http://www.example.org/Documento/
+---
+doc#generarPDF: {
+	datosReporte: {
+		fechaInicio: vars.datosReporte.fechaInicio,
+		fechaFin: vars.datosReporte.fechaFin,
+		numeroTotalFacturasEmitidas: vars.datosReporte.numeroTotalFacturasEmitidas,
+		sumaTotalImportes: vars.datosReporte.sumaTotalImportes,
+		numeroTotalFacturasValidas: vars.datosReporte.numeroTotalFacturasValidas,
+		numeroTotalFacturasSubsanadas: vars.datosReporte.numeroTotalFacturasSubsanadas,
+		numeroTotalFacturasAnuladas: vars.datosReporte.numeroTotalFacturasAnuladas,
+		numeroTotalFacturasInvalidas: vars.datosReporte.numeroTotalFacturasInvalidas,
+		reporteId: vars.reporteInsertadoId
+	},
+	WSKey: vars.WSKey
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1f3fd1d1-0dd9-40af-9bfd-6e4eef430f48" />
+		<wsc:consume operation="generarPDF" doc:name="Consume" doc:id="864d779a-cb20-4b5f-85ea-6c7d0dd8ff44" config-ref="Documento_SOAP_Service"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a2fb9b43-f7d3-486d-a14c-18fe031d0373" />
 	</flow>
 </mule>
