@@ -329,6 +329,25 @@ doc#generarPDF: {
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="1f3fd1d1-0dd9-40af-9bfd-6e4eef430f48" />
 		<wsc:consume operation="generarPDF" doc:name="Consume" doc:id="864d779a-cb20-4b5f-85ea-6c7d0dd8ff44" config-ref="Documento_SOAP_Service"/>
-		<logger level="INFO" doc:name="Logger" doc:id="a2fb9b43-f7d3-486d-a14c-18fe031d0373" />
+		<logger level="INFO" doc:name="Logger" doc:id="a2fb9b43-f7d3-486d-a14c-18fe031d0373" message="Transformamos el payload para llamar al 'notificador_reportes_estadisticas'"/>
+		<ee:transform doc:name="Transform Message" doc:id="1470c17d-8f51-4c15-b470-c898f4e423aa" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+solicitud: {
+  datosReporte: vars.datosReporte
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="Publish" doc:id="c06c861b-eaed-4d80-ba05-38504a81ea7a" config-ref="JMS_Config" destination="notificador_reportes_estadisticas" destinationType="TOPIC" />
+	</flow>
+	<flow name="notificadorReportesEstadisticas" doc:id="5daa80ca-0e22-486d-be58-28597534e12f" >
+		<jms:listener doc:name="On New Message" doc:id="d68ffeed-87f6-462c-9e8e-51945b690046" config-ref="JMS_Config" destination="notificador_reportes_estadisticas" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="8cc05825-bfcb-4042-8e64-bb2b6af493d9" />
 	</flow>
 </mule>
