@@ -13,6 +13,12 @@ http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/
 	<wsc:config name="Reporte_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="538dcd53-bc36-414a-b5ab-e76fe0ca046f" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
 	</wsc:config>
+	<wsc:config name="Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="4116da46-3490-4d7d-8ccf-2b8394b8c5d9" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
+	</wsc:config>
+	<wsc:config name="Ok_Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="48b1d443-2c68-4a1f-9272-7b739a91d100" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
+	</wsc:config>
 	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="/IniciarConsultaEstadisticasGlobales/IniciarConsultaEstadisticasGlobalesSOAP">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
@@ -154,6 +160,46 @@ rep#guardarReporteEnBD: {
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger6" doc:id="4cc3513f-7127-4c60-bc3b-dec856152edd" message="Se almacena el reporte de estadísticas globales en la base de datos" />
 		<wsc:consume doc:name="Consume 'guardarReporteEnBD'" doc:id="dc72d9c8-3536-47a2-80b6-f585e3404577" config-ref="Reporte_SOAP_Service" operation="guardarReporteEnBD"/>
-		<logger level="INFO" doc:name="Logger" doc:id="1a997d5d-962b-4e38-b045-f1174c487f97" />
+		<logger level="INFO" doc:name="Logger7" doc:id="4b8bb190-8444-4c56-8d21-edc5d48d1f56" message="#['Reporte de estadísticas creado y almacenado correctamente para la empresa con email: ' ++ (vars.datosEstadisticasGlobales.emailEmpresa)]" />
+		<ee:transform doc:name="Transform Message6" doc:id="288d1dc8-8bb6-4af5-9f31-a15ec8d2e7e4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+ns rep http://www.example.org/Reporte/
+---
+{
+  reporteId: (payload.body.rep#guardarReporteEnBDResponse.reporteId) as Number
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger8" doc:id="309d87d5-af96-4936-bb03-e75e8902175d" message="Almacenamos el id del reporte insertado en una variable" />
+		<set-variable value="#[payload.reporteId]" doc:name="Set reporteInsertadoId" doc:id="7ca54a1d-9eab-40a0-b415-aa7d2c39800c" variableName="reporteInsertadoId" />
+		<logger level="INFO" doc:name="Logger9" doc:id="1135582e-753b-4a0a-b9a4-71e9d7db5dea" message="Transformamos el payload para consumir la operación SOAP 'generarPDF' del servicio 'Documento'" />
+		<ee:transform doc:name="Transform Message7" doc:id="f85583a5-12bb-49e8-be09-9f2fc6e2580d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns doc http://www.example.org/Documento/
+---
+doc#generarPDF: {
+	datosReporte: {
+		fechaInicio: vars.datosEstadisticasGlobales.fechaInicio,
+		fechaFin: vars.datosEstadisticasGlobales.fechaFin,
+		numeroTotalFacturasEmitidas: vars.datosEstadisticasGlobales.numeroTotalFacturasEmitidas,
+		sumaTotalImportes: vars.datosEstadisticasGlobales.sumaTotalImportes,
+		numeroTotalFacturasValidas: vars.datosEstadisticasGlobales.numeroTotalFacturasValidas,
+		numeroTotalFacturasSubsanadas: vars.datosEstadisticasGlobales.numeroTotalFacturasSubsanadas,
+		numeroTotalFacturasAnuladas: vars.datosEstadisticasGlobales.numeroTotalFacturasAnuladas,
+		numeroTotalFacturasInvalidas: vars.datosEstadisticasGlobales.numeroTotalFacturasInvalidas,
+		reporteId: vars.reporteInsertadoId
+	},
+	WSKey: vars.WSKey
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger10" doc:id="77b0ff36-fd09-4ce2-b507-285d3c43b64e" message="Consumios el servicio SOAP para generar el PDF de estadísticas globales"/>
+		<wsc:consume doc:name="Consume" doc:id="d3a91719-7ded-4759-9c5c-c16dea97119a" config-ref="Ok_Documento_SOAP_Service" operation="generarPDF"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b982a4bc-db63-407b-9ac2-8841b14666fb" />
     </flow>
 </mule>
