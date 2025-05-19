@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
     <http:listener-config name="api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="14105"/>
     </http:listener-config>
@@ -8,6 +9,14 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
     <db:config name="Database_Config" doc:name="Database Config" doc:id="e66f4355-5315-4644-98ac-8df820b1966d" >
 		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="facturacion" />
 	</db:config>
+	<wsc:config name="Reporte_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="bd5e3f7f-15cc-4c4a-af70-22da64201c20" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
 	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="/IniciarConsultaEstadisticasGlobales/IniciarConsultaEstadisticasGlobalesSOAP">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
@@ -62,5 +71,45 @@ ns ns0 http://www.example.org/IniciarConsultaEstadisticasGlobales/
 			</otherwise>
 		</choice>
 		<logger level="INFO" doc:name="Logger" doc:id="f2d96ef4-1416-48a7-b05c-b98b2d5adb9e" />
+		<db:select doc:name="Select" doc:id="f64379fd-c242-401e-b1b3-b9f79808d657" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT email FROM empresas WHERE id=1;]]></db:sql>
+		</db:select>
+		<set-variable value="#[payload[0].email]" doc:name="Set emailEmpresaPrincipal" doc:id="90d86575-32c0-4d7e-9808-9331958afa7c" variableName="emailEmpresaPrincipal" />
+		<ee:transform doc:name="Transform Message1" doc:id="1c052cda-0893-4c5e-a55b-2717fec33545" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[import * from dw::core::Dates
+output application/java
+---
+atBeginningOfMonth(now())]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set fechaInicio" doc:id="ac400323-79b3-4395-821a-805eafad1ffb" variableName="fechaInicio" />
+		<ee:transform doc:name="Transform Message2" doc:id="f6c65971-b68e-4252-8feb-ce9d8bbd4c9c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/java
+---
+atBeginningOfMonth(now() + |P1M|)]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set fechaFin" doc:id="86cf5123-e77e-490a-9908-0ffe389e6bc6" variableName="fechaFin" />
+		<logger level="INFO" doc:name="Logger2" doc:id="3c9e1be6-672a-4ed5-b698-1476c62f388c" message="Transformamos el payload para consumir a la operacion SOAP 'calcularDatosReporteGlobal' del servicio SOAP 'IniciarConsultaEstadisticasGlobales'" />
+		<ee:transform doc:name="Transform Message3" doc:id="7e40705a-fde8-483f-89ee-8758960d4030" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns rep http://www.example.org/Reporte/
+---
+rep#calcularDatosReporteGlobal: {
+	fechaInicio: vars.fechaInicio,
+	fechaFin: vars.fechaFin,
+	WSKey: vars.WSKey
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="calcularDatosReporteGlobal" doc:name="Consume" doc:id="1863ad07-8d04-4c13-8fd1-c101da9ce6bf" config-ref="Reporte_SOAP_Service"/>
+		<logger level="INFO" doc:name="Logger" doc:id="f6fe542b-f9cd-4a2e-a926-4428c8f5b858" />
     </flow>
 </mule>
