@@ -87,6 +87,10 @@ output application/java
 		<logger level="INFO" doc:name="Logger" doc:id="93cb0556-2642-4b30-87b7-d5a314fe0627" message="Si iniciar es true, entonces iniciamos el proceso de generación y envío de los reportes de estadísticas" />
 		<choice doc:name="Choice" doc:id="0e77918f-362b-4702-8514-3c7f7a2f5eb4">
 			<when expression="#[vars.iniciar == true]">
+				<db:select doc:name="Select" doc:id="25c76ea3-be55-46ee-9f1e-130893bb7f50" config-ref="Database_Config">
+					<db:sql ><![CDATA[SELECT email FROM empresas WHERE id=1;]]></db:sql>
+				</db:select>
+				<set-variable value="#[payload[0].email]" doc:name="Set emailEmpresaPrincipal" doc:id="7c371b25-6f14-4ece-be25-989fbdcb08a6" variableName="emailEmpresaPrincipal"/>
 				<ee:transform doc:name="Transform Message" doc:id="810e154f-2386-4797-b033-5f3b7ab4696b">
 					<ee:message>
 						<ee:set-payload><![CDATA[import * from dw::core::Dates
@@ -133,7 +137,7 @@ ns ns3 http://www.example.org/Empresa/
 				<logger level="INFO" doc:name="Logger" doc:id="32462662-37d5-479d-92c0-da1cca37954e" />
 				<foreach doc:name="For Each" doc:id="f44e1a55-03c0-463f-8100-4f7d3aa41d2f" collection="#[payload]">
 					<choice doc:name="Choice" doc:id="6f676bfc-b305-4ecf-bfc8-f6e01af336d6" >
-						<when expression="#[payload.id != 1]">
+						<when expression="#[payload.email != vars.emailEmpresaPrincipal]">
 							<logger level="INFO" doc:name="Logger" doc:id="6e0a651e-c569-44c8-a854-df5c4bbdee60" />
 							<ee:transform doc:name="Transform Message" doc:id="d70a251c-19d2-4c4a-b655-d6e3f8afcb93" >
 								<ee:message >
