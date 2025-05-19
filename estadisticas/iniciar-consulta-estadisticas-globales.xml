@@ -129,6 +129,31 @@ ns ns1 http://www.example.org/Reporte/
 			</ee:message>
 		</ee:transform>
 		<set-variable value="#[payload]" doc:name="Set datosEstadisticasGlobales" doc:id="eda2b3f6-e950-4a16-b3a3-5cd0effa6c91" variableName="datosEstadisticasGlobales" />
-		<logger level="INFO" doc:name="Logger5" doc:id="7431b353-4a61-463a-be65-8fbc5ba88925" />
+		<logger level="INFO" doc:name="Logger5" doc:id="5bbe48bb-1e46-42ad-b9c3-1e2671cf8a2d" message="Transformamos el payload para consumir la operación SOAP 'guardarReporteEnBD'" />
+		<ee:transform doc:name="Transform Message5" doc:id="99297e69-5232-478a-a59f-18c2dabeb93d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns rep http://www.example.org/Reporte/
+---
+rep#guardarReporteEnBD: {
+	datosEntrada: {
+		fechaInicio: vars.datosEstadisticasGlobales.fechaInicio,
+		fechaFin: vars.datosEstadisticasGlobales.fechaFin,
+		numeroTotalFacturasEmitidas: vars.datosEstadisticasGlobales.numeroTotalFacturasEmitidas,
+		sumaTotalImportes: vars.datosEstadisticasGlobales.sumaTotalImportes,
+		numeroTotalFacturasValidas: vars.datosEstadisticasGlobales.numeroTotalFacturasValidas,
+		numeroTotalFacturasSubsanadas: vars.datosEstadisticasGlobales.numeroTotalFacturasSubsanadas,
+		numeroTotalFacturasAnuladas: vars.datosEstadisticasGlobales.numeroTotalFacturasAnuladas,
+		numeroTotalFacturasInvalidas: vars.datosEstadisticasGlobales.numeroTotalFacturasInvalidas,
+		emailEmpresa: vars.datosEstadisticasGlobales.emailEmpresa
+	},
+	WSKey: vars.WSKey
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger6" doc:id="4cc3513f-7127-4c60-bc3b-dec856152edd" message="Se almacena el reporte de estadísticas globales en la base de datos" />
+		<wsc:consume doc:name="Consume 'guardarReporteEnBD'" doc:id="dc72d9c8-3536-47a2-80b6-f585e3404577" config-ref="Reporte_SOAP_Service" operation="guardarReporteEnBD"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1a997d5d-962b-4e38-b045-f1174c487f97" />
     </flow>
 </mule>
