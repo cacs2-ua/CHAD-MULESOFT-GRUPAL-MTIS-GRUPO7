@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
-	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
-	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:os="http://www.mulesoft.org/schema/mule/os" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
-http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd">
 	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="fcc27460-ccdc-45e8-8383-a64a28f9c965" >
 		<jms:active-mq-connection username="mtis" password="mtis" >
 			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
@@ -26,6 +27,12 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
 	</wsc:config>
 	<wsc:config name="prueba" doc:name="Web Service Consumer Config" doc:id="10334601-640e-400d-8c42-c583f890b3cf" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
+	</wsc:config>
+	<os:object-store name="Object_store" doc:name="Object store" doc:id="fa953003-2498-42ea-981b-0dd71b7ddbe7" persistent="false" />
+	<wsc:config name="Reporte_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="23600cd2-4c87-491f-af16-900113dd9f2b" >
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" >
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
 	</wsc:config>
 	<flow name="solicitanteGeneracionReportesEstadisticas" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
@@ -84,6 +91,10 @@ output application/java
 				<logger level="INFO" doc:name="Logger" doc:id="68e31939-cbd2-4372-9d6e-4e8c5a23b87c" message="Acceso autorizado para realizar la operación" />
 			</otherwise>
 		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="0de9067b-bfd6-4bf9-9af6-bb483aa69da8" message="Almacenamos la WSKey en un almacén global para que sea accesible por todos los flujos"/>
+		<os:store doc:name="Store WSKey" doc:id="c69f5aaa-48c3-4359-b26b-bf18960a2fb4" objectStore="Object_store" key="#['WSKey']" >
+			<os:value ><![CDATA[#[vars.WSKey]]]></os:value>
+		</os:store>
 		<logger level="INFO" doc:name="Logger" doc:id="93cb0556-2642-4b30-87b7-d5a314fe0627" message="Si iniciar es true, entonces iniciamos el proceso de generación y envío de los reportes de estadísticas" />
 		<choice doc:name="Choice" doc:id="0e77918f-362b-4702-8514-3c7f7a2f5eb4">
 			<when expression="#[vars.iniciar == true]">
@@ -159,7 +170,7 @@ rep#calcularDatosReporte: {
 							<wsc:consume doc:name="Consume" doc:id="fe3887be-f179-4d5b-91f1-f31ffa19c684" config-ref="prueba" operation="calcularDatosReporte"/>
 							<logger level="INFO" doc:name="Logger" doc:id="42be12ac-774c-46b0-b3bb-4a5e7ee169db" />
 							<logger level="INFO" doc:name="Logger" doc:id="1b1e7009-03f7-47fa-a9c9-3b7935045c14" />
-							<jms:publish doc:name="Publish" doc:id="fff7e851-14d7-44ea-9e89-115d89ce191b" config-ref="JMS_Config" destination="generador_reportes_estadisticas" destinationType="TOPIC" >
+							<jms:publish doc:name="Publish" doc:id="fff7e851-14d7-44ea-9e89-115d89ce191b" config-ref="JMS_Config" destination="almacenador_reportes_estadisticas" destinationType="TOPIC" >
 								<jms:message >
 									<jms:body ><![CDATA[#[payload.body]]]></jms:body>
 								</jms:message>
@@ -176,12 +187,66 @@ rep#calcularDatosReporte: {
 			</otherwise>
 		</choice>
 	</flow>
-	<flow name="generadorReporteEstadisticas" doc:id="ec4f4662-6777-4ab4-b284-a443349c9718" >
-		<jms:listener doc:name="On New Message" doc:id="65669fde-f4cb-4c03-8b3b-4d0c0ec569f1" config-ref="JMS_Config" destination="generador_reportes_estadisticas" numberOfConsumers="1" >
+	<flow name="almacenadorReporteEstadisticas" doc:id="ec4f4662-6777-4ab4-b284-a443349c9718" >
+		<jms:listener doc:name="On New Message" doc:id="65669fde-f4cb-4c03-8b3b-4d0c0ec569f1" config-ref="JMS_Config" destination="almacenador_reportes_estadisticas" numberOfConsumers="1" >
 			<jms:consumer-type >
 				<jms:topic-consumer />
 			</jms:consumer-type>
 		</jms:listener>
-		<logger level="INFO" doc:name="Logger" doc:id="2375a1bc-986b-4460-b45f-583a31fb42cf" />
+		<logger level="INFO" doc:name="Logger" doc:id="2375a1bc-986b-4460-b45f-583a31fb42cf" message="Comienzo de la generación de los reportes de estadísticas"/>
+		<ee:transform doc:name="Transform Message" doc:id="c37a594c-5dd3-4bcb-b04e-a602ab080773" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+ns ns1 http://www.example.org/Reporte/
+
+var dr = payload.ns1#calcularDatosReporteResponse.datosReporte
+
+---
+{
+    fechaInicio: dr.fechaInicio as DateTime,
+    fechaFin: dr.fechaFin as DateTime,
+    numeroTotalFacturasEmitidas: dr.numeroTotalFacturasEmitidas as Number,
+    sumaTotalImportes: dr.sumaTotalImportes as Number,
+    numeroTotalFacturasValidas: dr.numeroTotalFacturasValidas as Number,
+    numeroTotalFacturasSubsanadas: dr.numeroTotalFacturasSubsanadas as Number,
+    numeroTotalFacturasAnuladas: dr.numeroTotalFacturasAnuladas as Number,
+    numeroTotalFacturasInvalidas: dr.numeroTotalFacturasInvalidas as Number,
+    emailEmpresa: dr.emailEmpresa
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="ca9d5acd-dbd3-4939-a9cf-b33e74c11503" message="Se guardan los datos del reporte de estadísticas en una variable JAVA que actúa como un diccionario"/>
+		<set-variable value="#[payload]" doc:name="Set datosReporte" doc:id="bd4d685b-93c4-45d7-8f3e-6901c3d8faf1" variableName="datosReporte"/>
+		<logger level="INFO" doc:name="Logger" doc:id="ba8d037f-377e-44df-bf9f-cac4d380557f" message="Recuperamos la WSKey del almacén global y la almacenamos en una variable local"/>
+		<os:retrieve doc:name="Retrieve WSKey" doc:id="bc7a1070-33ae-498c-84e2-85ad37eeb4a0" key="#['WSKey']" objectStore="Object_store"/>
+		<set-variable value="#[payload]" doc:name="Set WSKey" doc:id="cd7d5acf-573d-41bd-a80a-a7352314dc55" variableName="WSKey"/>
+		<logger level="INFO" doc:name="Logger" doc:id="c1e2135b-7256-42dc-8069-88faa8e8a8bc" message="Transformamos el payload para consumir la operación SOAP 'guardarReporteEnBD'"/>
+		<ee:transform doc:name="Transform Message" doc:id="cf377379-53e2-4304-aa20-309d27387615" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns rep http://www.example.org/Reporte/
+---
+rep#guardarReporteEnBD: {
+	datosEntrada: {
+		fechaInicio: vars.datosReporte.fechaInicio,
+		fechaFin: vars.datosReporte.fechaFin,
+		numeroTotalFacturasEmitidas: vars.datosReporte.numeroTotalFacturasEmitidas,
+		sumaTotalImportes: vars.datosReporte.sumaTotalImportes,
+		numeroTotalFacturasValidas: vars.datosReporte.numeroTotalFacturasValidas,
+		numeroTotalFacturasSubsanadas: vars.datosReporte.numeroTotalFacturasSubsanadas,
+		numeroTotalFacturasAnuladas: vars.datosReporte.numeroTotalFacturasAnuladas,
+		numeroTotalFacturasInvalidas: vars.datosReporte.numeroTotalFacturasInvalidas,
+		emailEmpresa: vars.datosReporte.emailEmpresa
+	},
+	WSKey: vars.WSKey
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="d0d15341-052f-4d03-8f9c-7c5a5dae4f4f" />
+		<wsc:consume operation="guardarReporteEnBD" doc:name="Guardar reporte en BD" doc:id="95ed229f-5fcd-4474-bbdb-2dc7e6330469" config-ref="Reporte_SOAP_Service"/>
+		<logger level="INFO" doc:name="Logger" doc:id="481d2d38-faa9-4220-a2ab-fbbfdbf273e9" />
 	</flow>
 </mule>
