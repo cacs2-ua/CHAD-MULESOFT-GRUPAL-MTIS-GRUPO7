@@ -421,12 +421,12 @@ not#Enviar: {
 		<wsc:consume operation="Enviar" doc:name="Consume" doc:id="2b74967b-7ccb-4fa1-a873-fc5e572555f8" config-ref="Web_Service_Consumer_Config2"/>
 		<logger level="INFO" doc:name="Logger" doc:id="cc6e4fae-4382-4a64-805e-c6ef3f84d14e" />
 	</flow>
-	<flow name="generadorEstadisticasGlobales" doc:id="f8caea89-79e1-455e-ab94-9b981c441351" >
+	<flow name="solicitarGeneracionReporteEstadisticasGlobales" doc:id="f8caea89-79e1-455e-ab94-9b981c441351" >
 		<scheduler doc:name="Scheduler" doc:id="0fb8ebbe-be3e-4273-bb5c-65fa7b9e769e" >
 			<scheduling-strategy >
 				<fixed-frequency frequency="16000"/>
 			</scheduling-strategy>
 		</scheduler>
-		<logger level="INFO" doc:name="Logger" doc:id="8451facf-b4fc-4cbc-91bf-79dfd8cf6594" />
+		<logger level="INFO" doc:name="Logger" doc:id="2189047e-71b9-4601-80f4-b9d35adf10b3" />
 	</flow>
 </mule>
