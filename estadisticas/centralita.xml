@@ -245,8 +245,21 @@ rep#guardarReporteEnBD: {
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="d0d15341-052f-4d03-8f9c-7c5a5dae4f4f" />
+		<logger level="INFO" doc:name="Logger" doc:id="d0d15341-052f-4d03-8f9c-7c5a5dae4f4f" message="Se almacena el reporte en la base de datos"/>
 		<wsc:consume operation="guardarReporteEnBD" doc:name="Guardar reporte en BD" doc:id="95ed229f-5fcd-4474-bbdb-2dc7e6330469" config-ref="Reporte_SOAP_Service"/>
-		<logger level="INFO" doc:name="Logger" doc:id="481d2d38-faa9-4220-a2ab-fbbfdbf273e9" />
+		<logger level="INFO" doc:name="Logger" doc:id="481d2d38-faa9-4220-a2ab-fbbfdbf273e9" message="#['Reporte de estadísticas creado y almacenado correctamente para la empresa con email: ' ++ (vars.datosReporte.emailEmpresa)]"/>
+		<jms:publish doc:name="Publish" doc:id="77b5587d-936d-488a-8619-1f171731a13d" config-ref="JMS_Config" destination="exportador_reportes_estadisticas" destinationType="TOPIC" >
+			<jms:message >
+				<jms:body ><![CDATA[#[payload.body]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+	</flow>
+	<flow name="exportadorReportesEstadisticas" doc:id="00c1b4d0-1a9d-4ca4-95f2-f0ce82f8d420" >
+		<jms:listener doc:name="On New Message" doc:id="489f424e-9f15-4fc3-9f2c-a294a8e09209" config-ref="JMS_Config" destination="exportador_reportes_estadisticas" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="deeb4e95-eced-48e2-a26a-3c2e92e95412" />
 	</flow>
 </mule>
