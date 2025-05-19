@@ -424,9 +424,111 @@ not#Enviar: {
 	<flow name="solicitarGeneracionReporteEstadisticasGlobales" doc:id="f8caea89-79e1-455e-ab94-9b981c441351" >
 		<scheduler doc:name="Scheduler" doc:id="0fb8ebbe-be3e-4273-bb5c-65fa7b9e769e" >
 			<scheduling-strategy >
-				<fixed-frequency frequency="16000"/>
+				<fixed-frequency frequency="9641"/>
 			</scheduling-strategy>
 		</scheduler>
 		<logger level="INFO" doc:name="Logger" doc:id="2189047e-71b9-4601-80f4-b9d35adf10b3" />
+		<set-variable value="SOAP_KEY_GRUPO7_FACTURACION_ELECTRONICA" doc:name="Set WSKey variable" doc:id="bc3cc6b1-49a5-4982-a82c-c22ffa6b4588" variableName="WSKey" />
+		<logger level="INFO" doc:name="Logger1" doc:id="02e653f7-7963-48c0-b6cc-732c54509ea1" />
+		<ee:transform doc:name="Transform Message" doc:id="fd754c31-6871-408f-be1c-e9bac8d535ed" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+---
+solicitud: {
+  iniciar: true,
+  WSKey: "SOAP_KEY_GRUPO7_FACTURACION_ELECTRONICA"
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<jms:publish doc:name="Publish" doc:id="6b813cc1-a020-4665-8ba8-7327d4c5b4c8" config-ref="JMS_Config" destination="calculador_estadisticas_globales" destinationType="TOPIC" />
+	</flow>
+	<flow name="calculadorEstadisticasGlobales" doc:id="717bd0a8-34f6-488c-9853-131527b07318" >
+		<jms:listener doc:name="On New Message" doc:id="7b40dd40-8c41-4218-be8b-5955e71c3515" config-ref="JMS_Config" destination="calculador_estadisticas_globales" numberOfConsumers="1" >
+			<jms:consumer-type >
+				<jms:topic-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="dddd67ff-9a12-4cf0-9c94-1c9756a3a751" message="Inicio del flujo para la generación y envío de los reportes de estadísticas" />
+		<ee:transform doc:name="Transform Message" doc:id="278e7cad-6a7c-42a9-a254-eaa6b2f4be7d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+  iniciar: (payload.solicitud.iniciar? default false) as Boolean,
+  WSKey  : payload.solicitud.WSKey
+}
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload.iniciar]" doc:name="Set Iniciar Variable" doc:id="f1b93d10-26e9-4356-9a16-706e13162c0b" variableName="iniciar" />
+		<set-variable value="#[payload.WSKey]" doc:name="Set WSKey" doc:id="8b0317fd-d937-4f53-b3a1-ae2b3734f781" variableName="WSKey" />
+		<db:select doc:name="Select RealWSKey" doc:id="5bfd713a-751f-4697-85b8-97d0a4c58e6b" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM parametros;]]></db:sql>
+		</db:select>
+		<set-variable value="#[payload[0].valor]" doc:name="Set RealWSKey" doc:id="96c81d6a-b071-468e-9f12-be62887651c4" variableName="RealWSKey" />
+		<logger level="INFO" doc:name="Logger1" doc:id="c6d199fa-ebe9-4ec1-beb5-a581a94a608f" message="Comparamos la WSKey con la original" />
+		<choice doc:name="Choice" doc:id="3a994be7-6412-40a9-8b65-e36e1e75980d" >
+			<when expression="#[vars.WSKey != vars.RealWSKey]" >
+				<raise-error doc:name="Raise error" doc:id="9f622140-d753-42b6-accd-76d14052e14c" type="ACCESS:UNAUTHORIZED" description="ERROR: Operacion no autorizada." />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="0a53f5ca-e159-457f-857d-1555e0d5104d" message="Acceso autorizado para realizar la operación" />
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger2" doc:id="faab2d58-1c80-4df3-bf98-05a9969b623a" message="Almacenamos la WSKey en un almacén global para que sea accesible por todos los flujos" />
+		<os:store doc:name="Store WSKey" doc:id="d5ec8087-e938-41df-8795-b76d483598d2" key="#['WSKey']" objectStore="Object_store" >
+			<os:value ><![CDATA[#[vars.WSKey]]]></os:value>
+		</os:store>
+		<logger level="INFO" doc:name="Logger3" doc:id="6637ecc5-d489-42f7-8d44-e148c0f4679d" message="Si iniciar es true, entonces iniciamos el proceso de generación y envío de los reportes de estadísticas" />
+		<choice doc:name="Choice1" doc:id="8d04e4d5-d789-456b-9bde-75ec1060005e" >
+			<when expression="#[vars.iniciar == true]" >
+				<db:select doc:name="Select" doc:id="156fb6a6-dcb5-4a48-9135-96897366020a" config-ref="Database_Config" >
+					<db:sql ><![CDATA[SELECT email FROM empresas WHERE id=1;]]></db:sql>
+				</db:select>
+				<set-variable value="#[payload[0].email]" doc:name="Set emailEmpresaPrincipal" doc:id="4e44b94f-3fda-4678-8660-ebf4505811d4" variableName="emailEmpresaPrincipal" />
+				<ee:transform doc:name="Transform Message" doc:id="9c6a8a4c-97c5-41ba-a362-7c91e3bacdf2" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[import * from dw::core::Dates
+output application/java
+---
+atBeginningOfMonth(now())]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload]" doc:name="Set fechaInicio" doc:id="afba1ead-6953-4bae-92a9-cf75eeb9b02a" variableName="fechaInicio" />
+				<ee:transform doc:name="Transform Message1" doc:id="5c3a271c-a465-4673-804b-b88dc87f98cf" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+import * from dw::core::Dates
+output application/java
+---
+atBeginningOfMonth(now() + |P1M|)]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<set-variable value="#[payload]" doc:name="Set fechaFin" doc:id="0b2c509e-3ab4-4266-9908-0ce49d45f36b" variableName="fechaFin" />
+				<logger level="INFO" doc:name="Logger" doc:id="60d68ae2-e72e-4896-a247-92566131f7ad" message="Transformamos el payload para consumir a la operacion SOAP 'calcularDatosReporteGlobal'" />
+				<ee:transform doc:name="Transform Message2" doc:id="c3e86b81-591d-4d5a-af56-c9cd9cbc5bed">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns rep http://www.example.org/Reporte/
+---
+rep#calcularDatosReporteGlobal: {
+	fechaInicio: vars.fechaInicio,
+	fechaFin: vars.fechaFin,
+	WSKey: vars.WSKey
+}
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume operation="calcularDatosReporteGlobal" doc:name="Consume" doc:id="8800dfbc-7ecf-4c8b-b122-a802e662c9b5" config-ref="prueba" />
+				<logger level="INFO" doc:name="Logger" doc:id="2c947a18-03fe-4565-ae31-fd2e74b57fd5" />
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="Logger" doc:id="2fd6caf1-8555-40d6-9f0b-f3f73fdb6362" message="Iniciar es false" />
+			</otherwise>
+		</choice>
 	</flow>
 </mule>
