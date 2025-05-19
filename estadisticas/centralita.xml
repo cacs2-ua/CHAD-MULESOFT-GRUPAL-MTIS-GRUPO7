@@ -69,8 +69,18 @@ emp#consultarTodasEmpresas: {
 ]]></ee:set-payload>
 					</ee:message>
 				</ee:transform>
-				<wsc:consume operation="consultarTodasEmpresas" doc:name="Consume" doc:id="ccba6f6e-985a-491f-bc8f-db894034625d" config-ref="Web_Service_Consumer_Config"/>
-				<logger level="INFO" doc:name="Logger" doc:id="a4b0f709-d540-4cbc-bb88-6de1a0c5003a" />
+				<wsc:consume operation="consultarTodasEmpresas" doc:name="Consume consultar todas empresas" doc:id="ccba6f6e-985a-491f-bc8f-db894034625d" config-ref="Web_Service_Consumer_Config"/>
+				<logger level="INFO" doc:name="Logger" doc:id="a4b0f709-d540-4cbc-bb88-6de1a0c5003a" message="Transformamos el payload en una lista de objetos JAVA"/>
+				<ee:transform doc:name="Transform Message" doc:id="26fe2895-537a-4b57-93f6-ea7772763bb3" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+ns ns3 http://www.example.org/Empresa/
+---
+(payload.body.ns3#consultarTodasEmpresasResponse.*empresas default [])]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger" doc:id="32462662-37d5-479d-92c0-da1cca37954e" />
 			</when>
 			<otherwise >
 				<logger level="INFO" doc:name="Logger" doc:id="cfcc7699-b256-459e-9bec-6eec329cde28" message="Iniciar es false"/>
