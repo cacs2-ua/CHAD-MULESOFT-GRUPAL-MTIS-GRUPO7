@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+<mule xmlns:email="http://www.mulesoft.org/schema/mule/email" xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit-soap="http://www.mulesoft.org/schema/mule/apikit-soap" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/apikit-soap http://www.mulesoft.org/schema/mule/apikit-soap/current/mule-apikit-soap.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
-http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd
+http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/email/current/mule-email.xsd">
     <http:listener-config name="api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="14105"/>
     </http:listener-config>
@@ -27,6 +29,12 @@ http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/
 			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
 		</wsc:connection>
 	</wsc:config>
+	<sockets:request-config name="Sockets_Request_config" doc:name="Sockets Request config" doc:id="c0843628-c341-4ae4-82d5-577c68881229" >
+		<sockets:tcp-requester-connection host="localhost" port="2525" />
+	</sockets:request-config>
+	<email:smtp-config name="Email_SMTP" doc:name="Email SMTP" doc:id="9e22b425-5262-4620-8a4b-be28a1cbad48" >
+		<email:smtp-connection host="localhost" port="2525" />
+	</email:smtp-config>
 	<flow name="api-main">
         <http:listener config-ref="api-httpListenerConfig" path="/IniciarConsultaEstadisticasGlobales/IniciarConsultaEstadisticasGlobalesSOAP">
             <http:response statusCode="#[attributes.additionalTransportData.statusCode default 200]">
@@ -272,5 +280,53 @@ rep#iniciarResponse: {
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8b03f330-5bdf-4204-8012-cfe90512c745" >
+				<db:insert doc:name="Insert" doc:id="f1952d66-0ba8-45a0-9714-a9e99f436d82" config-ref="Database_Config" >
+					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
+VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
+]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{
+    'fecha': now(),
+    'tipo': write(error.errorType, "application/json") default "N/A",
+    'descripcion': (error.description default "N/A"),
+    'descripcion_detallada': (error.detailedDescription default "N/A"),
+    'causa': write(error.cause, "application/json") default "N/A",
+    'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
+}]]]></db:input-parameters>
+				</db:insert>
+				<email:send doc:name="Send" doc:id="37dfb7aa-8cbc-4c57-8793-a6f28ef8bfbf" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante la gestión de las estadísticas globales de facturación">
+					<email:to-addresses >
+						<email:to-address value="facturacionmtis@gmail.com" />
+					</email:to-addresses>
+					<email:bcc-addresses />
+					<email:body contentTransferEncoding="8BIT" >
+						<email:content ><![CDATA[Se ha producido algún error durante la gestión de las estadísticas globales de facturación]]></email:content>
+					</email:body>
+				</email:send>
+				<ee:transform doc:name="Transform Message" doc:id="b22b089d-5ec9-46d3-b817-86381edd5d92" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns rep http://www.example.org/IniciarConsultaEstadisticasGlobales/
+---
+rep#iniciarResponse: {
+	datosEntrada: {
+		fechaInicio: |0001-01-01T00:00:00|,
+		fechaFin: |0001-01-01T00:00:00|,
+		numeroTotalFacturasEmitidas: -1 as Number,
+		sumaTotalImportes: -1.0 as Number,
+		numeroTotalFacturasValidas: -1 as Number,
+		numeroTotalFacturasSubsanadas: -1 as Number,
+		numeroTotalFacturasAnuladas: -1 as Number,
+		numeroTotalFacturasInvalidas: -1 as Number,
+		numeroTotalReportesCreados: -1 as Number
+	},
+	mensajeSalida: "Ha ocurrido un error durante la gestión de las estadísticas globales"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
     </flow>
 </mule>
