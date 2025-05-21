@@ -15,7 +15,11 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 		</jms:active-mq-connection>
 	</jms:config>
 	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="ce2c9486-dba8-4eed-8239-9933125b5317" >
-		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Empresa?wsdl" service="Empresa" port="EmpresaSOAP" address="http://localhost:8080/reporteEstadisticas/services/Empresa/" />
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Empresa?wsdl" service="Empresa" port="EmpresaSOAP" address="http://localhost:8080/reporteEstadisticas/services/Empresa/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
 	</wsc:config>
 	<db:config name="Database_Config" doc:name="Database Config" doc:id="f80030a8-048d-42f0-a45f-d7799155729d" >
 		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="facturacion" />
@@ -27,16 +31,27 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
 	</wsc:config>
 	<wsc:config name="prueba" doc:name="Web Service Consumer Config" doc:id="10334601-640e-400d-8c42-c583f890b3cf" >
-		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
 	</wsc:config>
 	<os:object-store name="Object_store" doc:name="Object store" doc:id="fa953003-2498-42ea-981b-0dd71b7ddbe7" persistent="false" />
 	<wsc:config name="Reporte_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="23600cd2-4c87-491f-af16-900113dd9f2b" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
 			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
 		</wsc:connection>
 	</wsc:config>
 	<wsc:config name="Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="368e659f-ba04-4116-9603-55d2923acdad" >
-		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
 	</wsc:config>
 	<wsc:config name="Web_Service_Consumer_Config2" doc:name="Web Service Consumer Config" doc:id="6506cb9b-f896-468e-81b8-47cb1e861d65" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Notificacion?wsdl" service="Notificacion" port="NotificacionSOAP" address="http://localhost:8080/reporteEstadisticas/services/Notificacion/" >
@@ -51,11 +66,11 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 	<flow name="solicitanteGeneracionReportesEstadisticas" doc:id="50275c53-d9aa-448d-8d30-f7b2c0aed5c5" >
 		<scheduler doc:name="Scheduler" doc:id="7c475f34-9b5d-40a4-9046-ea9bd7e3f2b8" >
 			<scheduling-strategy >
-				<fixed-frequency frequency="8000" startDelay="100" />
+				<fixed-frequency frequency="45000" startDelay="100" />
 			</scheduling-strategy>
 		</scheduler>
 		<logger level="INFO" doc:name="Logger" doc:id="a918ce84-c1e3-4694-9d0c-3527b6da3e90" message="Se solicita la generación de los reportes de estadísticas"/>
-		<set-variable value="SOAP_KEY_GRUPO7_FACTURACION_ELECTRONICAA" doc:name="Set WSKey variable" doc:id="d6a16a47-39d3-40ca-87e0-e1f8020a1b45" variableName="WSKey"/>
+		<set-variable value="SOAP_KEY_GRUPO7_FACTURACION_ELECTRONICA" doc:name="Set WSKey variable" doc:id="d6a16a47-39d3-40ca-87e0-e1f8020a1b45" variableName="WSKey"/>
 		<logger level="INFO" doc:name="Logger" doc:id="f834069d-afb7-4dd9-bb48-696c6a666fdf" />
 		<ee:transform doc:name="Transform Message" doc:id="01f5b52c-5a16-4e77-ab1a-b7819bcb86cf" >
 			<ee:message >
@@ -71,7 +86,7 @@ solicitud: {
 		</ee:transform>
 		<jms:publish doc:name="Publish" doc:id="686b41ac-014c-4e38-9592-7afeb69de2d2" config-ref="JMS_Config" destination="calculador_estadisticas" destinationType="TOPIC" />
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c14ed3eb-2a97-4c3d-a2fc-75470c3be029" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c14ed3eb-2a97-4c3d-a2fc-75470c3be029" type="ANY">
 				<db:insert doc:name="Insert" doc:id="3f2b45ad-28f0-45d0-a778-c2c1e598426e" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -85,7 +100,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="3499d9f5-b894-4df8-91e3-9b1a9de433a9" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante el flujo solicitante generador reportes de estadísticas">
+				<email:send doc:name="Send" doc:id="3499d9f5-b894-4df8-91e3-9b1a9de433a9" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante el flujo solicitante generador reportes de estadísticas">
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>
@@ -238,7 +253,7 @@ rep#calcularDatosReporte: {
 			</otherwise>
 		</choice>
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d49f8ce3-4989-449e-869e-07fcb9f8bde7" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d49f8ce3-4989-449e-869e-07fcb9f8bde7" type="ANY">
 				<db:insert doc:name="Insert" doc:id="bda7a3fe-cd79-454c-8252-c9deadf9bd59" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -252,7 +267,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="66bbe640-49bd-42c0-956e-57642b4fc90a" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante el flujo calculador de estadísticas">
+				<email:send doc:name="Send" doc:id="66bbe640-49bd-42c0-956e-57642b4fc90a" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante el flujo calculador de estadísticas">
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>
@@ -364,7 +379,7 @@ solicitud: {
 		<jms:publish doc:name="Publish" doc:id="77b5587d-936d-488a-8619-1f171731a13d" config-ref="JMS_Config" destination="exportador_reportes_estadisticas" destinationType="TOPIC" >
 		</jms:publish>
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="95acb2a0-5933-4020-9291-fb4ad373ed4a" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="95acb2a0-5933-4020-9291-fb4ad373ed4a" type="ANY">
 				<db:insert doc:name="Insert" doc:id="cd4fcce5-879e-42be-9826-bf57dbf2f85c" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -378,7 +393,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="00034f8d-c271-48f7-a718-ed0f2bbaa5f6" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante el flujo almacenador de reportes de estadísticas">
+				<email:send doc:name="Send" doc:id="00034f8d-c271-48f7-a718-ed0f2bbaa5f6" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante el flujo almacenador de reportes de estadísticas">
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>
@@ -464,7 +479,7 @@ solicitud: {
 		</ee:transform>
 		<jms:publish doc:name="Publish" doc:id="c06c861b-eaed-4d80-ba05-38504a81ea7a" config-ref="JMS_Config" destination="notificador_reportes_estadisticas" destinationType="TOPIC" />
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4c04d555-53dc-4d53-9ade-e7b6293b0b20" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4c04d555-53dc-4d53-9ade-e7b6293b0b20" type="ANY">
 				<db:insert doc:name="Insert" doc:id="2d79b158-54c5-4721-9740-5c0fe7ac7e81" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -478,7 +493,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="17959de8-9a93-4e49-bd9a-6e965a975ca4" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante el flujo exportador de reportes de estadísticas">
+				<email:send doc:name="Send" doc:id="17959de8-9a93-4e49-bd9a-6e965a975ca4" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante el flujo exportador de reportes de estadísticas">
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>
@@ -573,7 +588,7 @@ not#Enviar: {
 		<wsc:consume operation="Enviar" doc:name="Consume" doc:id="2b74967b-7ccb-4fa1-a873-fc5e572555f8" config-ref="Web_Service_Consumer_Config2"/>
 		<logger level="INFO" doc:name="Logger" doc:id="cc6e4fae-4382-4a64-805e-c6ef3f84d14e" />
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c8c4670d-3fab-46f7-9cef-0659017c2958" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c8c4670d-3fab-46f7-9cef-0659017c2958" type="ANY">
 				<db:insert doc:name="Insert" doc:id="7e4501d9-3e7f-40fe-8b67-abedf6327357" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -587,7 +602,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="a2321aaf-1114-41d7-8422-c0794c6f36b2" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante el flujo notificador de reportes de estadísticas" >
+				<email:send doc:name="Send" doc:id="a2321aaf-1114-41d7-8422-c0794c6f36b2" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante el flujo notificador de reportes de estadísticas" >
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>

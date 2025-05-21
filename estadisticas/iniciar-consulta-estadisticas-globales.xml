@@ -13,13 +13,21 @@ http://www.mulesoft.org/schema/mule/email http://www.mulesoft.org/schema/mule/em
 		<db:my-sql-connection host="localhost" port="3306" user="root" password="root" database="facturacion" />
 	</db:config>
 	<wsc:config name="Reporte_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="538dcd53-bc36-414a-b5ab-e76fe0ca046f" >
-		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" />
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Reporte?wsdl" service="Reporte" port="ReporteSOAP" address="http://localhost:8080/reporteEstadisticas/services/Reporte/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
 	</wsc:config>
 	<wsc:config name="Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="4116da46-3490-4d7d-8ccf-2b8394b8c5d9" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
 	</wsc:config>
 	<wsc:config name="Ok_Documento_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="48b1d443-2c68-4a1f-9272-7b739a91d100" >
-		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" />
+		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Documento?wsdl" service="Documento" port="DocumentoSOAP" address="http://localhost:8080/reporteEstadisticas/services/Documento/" >
+			<wsc:custom-transport-configuration >
+				<wsc:default-http-transport-configuration timeout="13000" />
+			</wsc:custom-transport-configuration>
+		</wsc:connection>
 	</wsc:config>
 	<wsc:config name="Notificacion_SOAP_Service" doc:name="Web Service Consumer Config" doc:id="3e351732-40de-4a4a-bea8-ce5c35258e05" >
 		<wsc:connection wsdlLocation="http://localhost:8080/reporteEstadisticas/services/Notificacion?wsdl" service="Notificacion" port="NotificacionSOAP" address="http://localhost:8080/reporteEstadisticas/services/Notificacion/" >
@@ -225,7 +233,6 @@ var totalValid = (d.numeroTotalFacturasValidas default 0) + (d.numeroTotalFactur
 "- Start date: " ++ ((d.fechaInicio as DateTime) as String {format: "MMM d, yyyy - HH:mm"}) ++ "\n" ++
 "- End date: " ++ ((d.fechaFin    as DateTime) as String {format: "MMM d, yyyy - HH:mm"}) ++ "\n" ++
 "- Total number of issued invoices: " ++ (d.numeroTotalFacturasEmitidas default 0) ++ "\n" ++
-"- Total sum of all amounts (including VAT): " ++ (d.sumaTotalImportes default 0.0) ++ "\n" ++
 "- Total number of valid invoices (corrected or not corrected): " ++ totalValid ++ "\n" ++
 "- Total number of valid and not corrected invoices: " ++ (d.numeroTotalFacturasValidas   default 0) ++ "\n" ++
 "- Total number of valid and corrected invoices: " ++ (d.numeroTotalFacturasSubsanadas default 0) ++ "\n" ++
@@ -281,7 +288,7 @@ rep#iniciarResponse: {
 			</ee:message>
 		</ee:transform>
 		<error-handler >
-			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8b03f330-5bdf-4204-8012-cfe90512c745" >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="8b03f330-5bdf-4204-8012-cfe90512c745" type="ANY">
 				<db:insert doc:name="Insert" doc:id="f1952d66-0ba8-45a0-9714-a9e99f436d82" config-ref="Database_Config" >
 					<db:sql ><![CDATA[INSERT INTO errores (fecha, tipo, descripcion, descripcion_detallada, causa, componente_fallido) 
 VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente_fallido)
@@ -295,7 +302,7 @@ VALUES (:fecha, :tipo, :descripcion, :descripcion_detallada, :causa, :componente
     'componente_fallido': write(error.failingComponent, "application/json") default "N/A"
 }]]]></db:input-parameters>
 				</db:insert>
-				<email:send doc:name="Send" doc:id="37dfb7aa-8cbc-4c57-8793-a6f28ef8bfbf" config-ref="Email_SMTP" fromAddress="alejandrosirvent@gmail.com" subject="Error durante la gestión de las estadísticas globales de facturación">
+				<email:send doc:name="Send" doc:id="37dfb7aa-8cbc-4c57-8793-a6f28ef8bfbf" config-ref="Email_SMTP" fromAddress="agencia@tributaria.com" subject="Error durante la gestión de las estadísticas globales de facturación">
 					<email:to-addresses >
 						<email:to-address value="facturacionmtis@gmail.com" />
 					</email:to-addresses>
